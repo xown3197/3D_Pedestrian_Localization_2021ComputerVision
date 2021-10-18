@@ -1,30 +1,22 @@
-## 메모
 
-
+### Short cut
 ```sh
 # eval
-python3 -m monoloco.run eval --model data/models/monoloco-190719-0923.pkl --generate --dir_ann ./annotations/kitti
 
-python3 -m monoloco.run eval --model data/models/monoloco-190719-0923.pkl --generate --dir_ann ./annotations/potenit --dataset potenit
+python3 -m monoloco.run eval --model {checkpoint path} --generate --dir_ann {annotations_dir} --dataset {potenit}
 
-CUDA_VISIBLE_DEVIECES=4 python3 -m monoloco.run eval --model data/models/monoloco-210825-0548.pkl --generate --dir_ann ./annotations/potenit --dataset potenit
 
 
 # preprocessing
-python3 -m monoloco.run prep --dir_ann ./annotations/potenit --dataset potenit
+python3 -m monoloco.run prep --dir_ann {annotations_dir} --dataset potenit
 
 # training
-CUDA_VISIBLE_DEVIECES=4 python3 -m monoloco.run train --joints /home/tjkim/workspace/nrf/code/backup/monoloco/data/arrays/joints-potenit-210825-0540.json
+CUDA_VISIBLE_DEVIECES=4 python3 -m monoloco.run train --joints data/arrays/{keypoint_path}.json
 
 ## predict
 # potenit
-python3 -m monoloco.run predict --glob data/potenit/images/Set08/Set08_1/RGB/*.png --checkpoint=shufflenetv2k30 --output_types combined --model data/models/monoloco-210825-0548.pkl --n_dropout 50 --z_max 6 --show --output_directory ./result/potenit_08_1 --instance_threshold 0.05 --force-complete-pose --seed-threshold 0.05 --path_gt data/arrays/names-potenit-210825-0540.json
+python3 -m monoloco.run predict --glob {data_root}/*.png --checkpoint=shufflenetv2k30 --output_types combined --model {checkpoint}.pth --n_dropout 50 --z_max 6 --show --output_directory ./result/{your_path} --instance_threshold 0.05 --force-complete-pose --seed-threshold 0.05 --path_gt data/arrays/{keypoint_path}.json
 
-# kitti
-python3 -m monoloco.run predict docs/002282.png --output_types combined --scale 2 --model data/models/monoloco-190513-1437.pkl --n_dropout 50 --z_max 30 --show --output_directory ./result/ --instance_threshold 0.9
-
-# 서핑 보드
-python3 -m monoloco.run predict docs/surf.jpg --output_types combined --model data/models/monoloco-190513-1437.pkl --n_dropout 50 --z_max 25 --show --output_directory ./result/ --instance_threshold 0.9
 ```
 
 # Monoloco
