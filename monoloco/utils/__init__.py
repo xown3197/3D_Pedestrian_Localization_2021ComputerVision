@@ -5,3 +5,6 @@ from .kitti import check_conditions, get_category, split_training, parse_ground_
 from .camera import xyz_from_distance, get_keypoints, pixel_to_camera, project_3d, open_image
 from .logs import set_logger
 from ..utils.nuscenes import select_categories
+
+## 추가
+from .potenit import split_training_potenit, get_calibration_potenit

@@ -55,7 +55,8 @@ class Trainer:
         n_joints = 17
         input_size = n_joints * 2
         self.output_size = 2
-        self.clusters = ['10', '20', '30', '>30']
+        # self.clusters = ['10', '20', '30', '>30']
+        self.clusters = ['10']
         self.hidden_size = hidden_size
         self.n_stage = n_stage
         self.dir_out = dir_out

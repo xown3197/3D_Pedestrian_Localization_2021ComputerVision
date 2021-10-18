@@ -1,8 +1,12 @@
 # pylint: disable=too-many-branches, too-many-statements
 import argparse
 
-from openpifpaf.network import nets
-from openpifpaf import decoder
+import torch
+
+import openpifpaf.network as nets
+# from openpifpaf import decoder
+
+from openpifpaf import decoder, visualizer, show, logger
 
 
 def cli():
@@ -25,6 +29,9 @@ def cli():
 
     # Predict (2D pose and/or 3D location from images)
     # General
+
+    predict_parser.add_argument('--checkpoint', help='pifpaf model')
+
     predict_parser.add_argument('--networks', nargs='+', help='Run pifpaf and/or monoloco', default=['monoloco'])
     predict_parser.add_argument('images', nargs='*', help='input images')
     predict_parser.add_argument('--glob', help='glob expression for input images (for many images)')
@@ -33,10 +40,14 @@ def cli():
                                 help='what to output: json keypoints skeleton for Pifpaf'
                                      'json bird front combined for Monoloco')
     predict_parser.add_argument('--show', help='to show images', action='store_true')
+    predict_parser.add_argument('--instance_threshold', type=float, default=0.15, help='threshold for entire instance')
+    predict_parser.add_argument('--seed_threshold', type=float, default=0.05, help='threshold for entire instance')
+    predict_parser.add_argument('--force_complete_pose ',  help='threshold for entire instance', action='store_true') 
 
     # Pifpaf
-    nets.cli(predict_parser)
-    decoder.cli(predict_parser, force_complete_pose=True, instance_threshold=0.15)
+    nets.Factory.cli(parser)
+    decoder.cli(predict_parser)
+
     predict_parser.add_argument('--scale', default=1.0, type=float, help='change the scale of the image to preprocess')
 
     # Monoloco
@@ -51,6 +62,7 @@ def cli():
     predict_parser.add_argument('--n_dropout', type=int, help='Epistemic uncertainty evaluation', default=0)
     predict_parser.add_argument('--dropout', type=float, help='dropout parameter', default=0.2)
     predict_parser.add_argument('--webcam', help='monoloco streaming', action='store_true')
+    predict_parser.add_argument('--output_directory', type=str, default=None, help='monoloco streaming')
 
     # Training
     training_parser.add_argument('--joints', help='Json file with input joints',
@@ -85,6 +97,14 @@ def cli():
     eval_parser.add_argument('--verbose', help='verbosity of statistics', action='store_true')
     eval_parser.add_argument('--stereo', help='include stereo baseline results', action='store_true')
 
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    predict_parser.add_argument('--device', help='directory of annotations of 2d joints')
+
+    predict_parser.device = device
+
+
     args = parser.parse_args()
     return args
 
@@ -107,6 +127,10 @@ def main():
         if 'kitti' in args.dataset:
             from .prep.preprocess_ki import PreprocessKitti
             prep = PreprocessKitti(args.dir_ann, args.iou_min)
+            prep.run()
+        if 'potenit' in args.dataset:
+            from .prep.preprocess_po import PreprocessPotenit
+            prep = PreprocessPotenit(args.dir_ann, args.iou_min)
             prep.run()
 
     elif args.command == 'train':
@@ -132,11 +156,16 @@ def main():
             from .eval import geometric_baseline
             geometric_baseline(args.joints)
 
-        if args.generate:
+        if args.generate and args.dataset == 'kitti':
             from .eval import GenerateKitti
             kitti_txt = GenerateKitti(args.model, args.dir_ann, p_dropout=args.dropout, n_dropout=args.n_dropout,
                                       stereo=args.stereo)
             kitti_txt.run()
+
+        if args.generate and args.dataset == 'potenit':
+            from .eval import GeneratePotenit
+            potenit_txt = GeneratePotenit(args.model, args.dir_ann, p_dropout=args.dropout, n_dropout=args.n_dropout, stereo=args.stereo)
+            potenit_txt.run()
 
         if args.dataset == 'kitti':
             from .eval import EvalKitti
@@ -149,6 +178,11 @@ def main():
             training = Trainer(joints=args.joints)
             _ = training.evaluate(load=True, model=args.model, debug=False)
 
+        if 'potenit' in args.dataset:
+            from .eval import EvalPotenit
+            potenit_eval = EvalPotenit(verbose=args.verbose, stereo=args.stereo)
+            potenit_eval.run()
+            potenit_eval.printer(show=args.show, save=args.save)
     else:
         raise ValueError("Main subparser not recognized or not provided")
 

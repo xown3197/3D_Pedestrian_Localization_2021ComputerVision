@@ -102,20 +102,44 @@ def preprocess_pifpaf(annotations, im_size=None):
 
     for dic in annotations:
         box = dic['bbox']
+    
         if box[3] < 0.5:  # Check for no detections (boxes 0,0,0,0)
             return [], []
-
+        
         kps = prepare_pif_kps(dic['keypoints'])
         conf = float(np.sort(np.array(kps[2]))[-3])  # The confidence is the 3rd highest value for the keypoints
 
         # Add 15% for y and 20% for x
-        delta_h = (box[3] - box[1]) / 7
-        delta_w = (box[2] - box[0]) / 3.5
-        assert delta_h > -5 and delta_w > -5, "Bounding box <=0"
-        box[0] -= delta_w
-        box[1] -= delta_h
-        box[2] += delta_w
-        box[3] += delta_h
+        # bbox = (x, y, w, h)
+
+        try:
+            # conf = dic['score']
+            # Enlarge boxes
+            delta_h = (box[3]) / (10 )
+            delta_w = (box[2]) / (5 )
+            # from width height to corners
+            box[2] += box[0]
+            box[3] += box[1]
+
+        except KeyError:
+            all_confs = np.array(kps[2])
+            score_weights = np.ones(17)
+            score_weights[:3] = 3.0
+            score_weights[5:] = 0.1
+            # conf = np.sum(score_weights * np.sort(all_confs)[::-1])
+            conf = float(np.mean(all_confs))
+            # Add 15% for y and 20% for x
+            delta_h = (box[3] - box[1]) / (7 )
+            delta_w = (box[2] - box[0]) / (3.5 )
+            assert delta_h > -5 and delta_w > -5, "Bounding box <=0"
+
+        # delta_h = (box[3] - box[1]) / 7
+        # delta_w = (box[2] - box[0]) / 3.5
+        # assert delta_h > -5 and delta_w > -5, "Bounding box <=0"
+        # box[0] -= delta_w
+        # box[1] -= delta_h
+        # box[2] += delta_w
+        # box[3] += delta_h
 
         # Put the box inside the image
         if im_size is not None:

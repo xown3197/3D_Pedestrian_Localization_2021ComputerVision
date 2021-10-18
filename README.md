@@ -1,3 +1,32 @@
+## 메모
+
+
+```sh
+# eval
+python3 -m monoloco.run eval --model data/models/monoloco-190719-0923.pkl --generate --dir_ann ./annotations/kitti
+
+python3 -m monoloco.run eval --model data/models/monoloco-190719-0923.pkl --generate --dir_ann ./annotations/potenit --dataset potenit
+
+CUDA_VISIBLE_DEVIECES=4 python3 -m monoloco.run eval --model data/models/monoloco-210825-0548.pkl --generate --dir_ann ./annotations/potenit --dataset potenit
+
+
+# preprocessing
+python3 -m monoloco.run prep --dir_ann ./annotations/potenit --dataset potenit
+
+# training
+CUDA_VISIBLE_DEVIECES=4 python3 -m monoloco.run train --joints /home/tjkim/workspace/nrf/code/backup/monoloco/data/arrays/joints-potenit-210825-0540.json
+
+## predict
+# potenit
+python3 -m monoloco.run predict --glob data/potenit/images/Set08/Set08_1/RGB/*.png --checkpoint=shufflenetv2k30 --output_types combined --model data/models/monoloco-210825-0548.pkl --n_dropout 50 --z_max 6 --show --output_directory ./result/potenit_08_1 --instance_threshold 0.05 --force-complete-pose --seed-threshold 0.05 --path_gt data/arrays/names-potenit-210825-0540.json
+
+# kitti
+python3 -m monoloco.run predict docs/002282.png --output_types combined --scale 2 --model data/models/monoloco-190513-1437.pkl --n_dropout 50 --z_max 30 --show --output_directory ./result/ --instance_threshold 0.9
+
+# 서핑 보드
+python3 -m monoloco.run predict docs/surf.jpg --output_types combined --model data/models/monoloco-190513-1437.pkl --n_dropout 50 --z_max 25 --show --output_directory ./result/ --instance_threshold 0.9
+```
+
 # Monoloco
 
 > We tackle the fundamentally ill-posed problem of 3D human localization from monocular RGB images. Driven by the limitation of neural networks outputting point estimates, we address the ambiguity in the task by predicting confidence intervals through a loss function based on the Laplace distribution. Our architecture is a light-weight feed-forward neural network that predicts 3D locations and corresponding confidence intervals given 2D human poses. The design is particularly well suited for small training data, cross-dataset generalization, and real-time applications. Our experiments show that we (i) outperform state-of-the-art results on KITTI and nuScenes datasets, (ii) even outperform a stereo-based method for far-away pedestrians, and (iii) estimate meaningful confidence intervals. We further share insights on our model of uncertainty in cases of limited observations and out-of-distribution samples.
@@ -187,6 +216,9 @@ As simple as `python3 -m monoloco.run --train --joints <json file path>`
 All the hyperparameters options can be checked at `python3 -m monoloco.run train --help`.
 
 ### Hyperparameters tuning
+```sh
+CUDA_VISIBLE_DEVICES=4 python3 -m monoloco.run train --hyp --multiplier 10 --r_seed 1
+```
 Random search in log space is provided. An example: `python3 -m monoloco.run train --hyp --multiplier 10 --r_seed 1`.
 One iteration of the multiplier includes 6 runs.
 
@@ -203,7 +235,6 @@ and stereo Baselines:
 * **Mono3D**: download validation files from [here](http://3dimage.ee.tsinghua.edu.cn/cxz/mono3d) 
 and save them into `data/kitti/m3d`
 * **3DOP**: download validation files from [here](https://xiaozhichen.github.io/) 
-and save them into `data/kitti/3dop`
 * **MonoDepth**: compute an average depth for every instance using the following script 
 [here](https://github.com/Parrotlife/pedestrianDepth-baseline/tree/master/MonoDepth-PyTorch) 
 and save them into `data/kitti/monodepth`

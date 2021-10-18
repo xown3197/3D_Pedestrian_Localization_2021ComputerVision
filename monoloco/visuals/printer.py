@@ -136,6 +136,7 @@ class Printer:
              save=False, show=False):
 
         # Process the annotation dictionary of monoloco
+        # import pdb;pdb.set_trace()
         self._process_results(dic_out)
 
         # Draw the front figure
@@ -180,12 +181,14 @@ class Printer:
 
     def draw_ellipses(self, axes, idx):
         """draw uncertainty ellipses"""
+        # task error ~ angle 수정 필요
         target = get_task_error(self.dds_real[idx])
         angle_gt = get_angle(self.xx_gt[idx], self.zz_gt[idx])
         ellipse_real = Ellipse((self.xx_gt[idx], self.zz_gt[idx]), width=target * 2, height=1,
                                angle=angle_gt, color='lightgreen', fill=True, label="Task error")
         axes[1].add_patch(ellipse_real)
         if abs(self.zz_gt[idx] - self.zz_pred[idx]) > 0.001:
+            # GT x 표시
             axes[1].plot(self.xx_gt[idx], self.zz_gt[idx], 'kx', label="Ground truth", markersize=3)
 
         angle = get_angle(self.xx_pred[idx], self.zz_pred[idx])
@@ -199,7 +202,8 @@ class Printer:
         axes[1].add_patch(ellipse_ale)
         if self.epistemic:
             axes[1].add_patch(ellipse_var)
-
+        
+        # predicted red dot
         axes[1].plot(self.xx_pred[idx], self.zz_pred[idx], 'ro', label="Predicted", markersize=3)
 
     def draw_boxes(self, axes, idx, color):
@@ -270,6 +274,6 @@ def get_angle(xx, zz):
     """Obtain the points to plot the confidence of each annotation"""
 
     theta = math.atan2(zz, xx)
-    angle = theta * (180 / math.pi)
+    angle = theta * (360 / math.pi)
 
     return angle

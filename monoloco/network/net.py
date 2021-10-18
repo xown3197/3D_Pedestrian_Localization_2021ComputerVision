@@ -85,7 +85,8 @@ class MonoLoco:
 
         matches = reorder_matches(matches, boxes, mode='left_right')
         uv_shoulders = get_keypoints(keypoints, mode='shoulder')
-        uv_centers = get_keypoints(keypoints, mode='center')
+        # uv_centers = get_keypoints(keypoints, mode='center')
+        uv_centers = get_keypoints(keypoints, mode='bottom')
         xy_centers = pixel_to_camera(uv_centers, kk, 1)
 
         # Match with ground truth if available
@@ -102,6 +103,7 @@ class MonoLoco:
             uv_shoulder = [round(uu_s), round(vv_s)]
             uv_center = [round(uu_c), round(vv_c)]
             xyz_real = xyz_from_distance(dd_real, xy_centers[idx])
+            # import pdb;pdb.set_trace()
             xyz_pred = xyz_from_distance(dd_pred, xy_centers[idx])
             dic_out['boxes'].append(box)
             dic_out['boxes_gt'].append(boxes_gt[idx_gt] if dic_gt else boxes[idx])

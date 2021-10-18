@@ -24,6 +24,7 @@ def show_results(dic_stats, show=False, save=False, stereo=False):
     y_max = 4.7
     xx = np.linspace(0, 60, 100)
     excl_clusters = ['all', '50', '>50', 'easy', 'moderate', 'hard']
+    # excl_clusters = ['easy', 'moderate', 'hard', 'all']
     clusters = tuple([clst for clst in dic_stats[phase]['monoloco'] if clst not in excl_clusters])
     yy_gender = get_task_error(xx)
 
@@ -36,7 +37,10 @@ def show_results(dic_stats, show=False, save=False, stereo=False):
         plt.xlabel("Ground-truth distance [m]")
         plt.ylabel("Average localization error [m]")
         for idx, method in enumerate(style['methods']):
+            # [print(dic_stats[phase][method][clst]['mean']) for clst in clusters]
+            import pdb;pdb.set_trace()
             errs = [dic_stats[phase][method][clst]['mean'] for clst in clusters]
+            
             assert errs, "method %s empty" % method
             xxs = get_distances(clusters)
 
@@ -278,10 +282,29 @@ def get_percentile(dist_gmm):
     # mad_d = np.mean(np.abs(dist_d - mu_d))
 
 
+# def printing_styles(stereo):
+#     style = {'mono': {"labels": ['Mono3D', 'Geometric Baseline', 'MonoDepth', 'Our MonoLoco', '3DOP (stereo)'],
+#                       "methods": ['m3d_merged', 'geometric_merged', 'monodepth_merged', 'monoloco_merged',
+#                                   '3dop_merged'],
+#                       "mks": ['*', '^', 'p', 's', 'o'],
+#                       "mksizes": [6, 6, 6, 6, 6], "lws": [1.5, 1.5, 1.5, 2.2, 1.6],
+#                       "colors": ['r', 'deepskyblue', 'grey', 'b', 'darkorange'],
+#                       "lstyles": ['solid', 'solid', 'solid', 'solid', 'dashdot']}}
+#     if stereo:
+#         style['stereo'] = {"labels": ['3DOP', 'Pose Baseline', 'ReiD Baseline', 'Our MonoLoco (monocular)',
+#                                       'Our Stereo Baseline'],
+#                            "methods": ['3dop_merged', 'pose_merged', 'reid_merged', 'monoloco_merged',
+#                                        'ml_stereo_merged'],
+#                            "mks": ['o', '^', 'p', 's', 's'],
+#                            "mksizes": [6, 6, 6, 4, 6], "lws": [1.5, 1.5, 1.5, 1.2, 1.5],
+#                            "colors": ['darkorange', 'lightblue', 'red', 'b', 'b'],
+#                            "lstyles": ['solid', 'solid', 'solid', 'dashed', 'solid']}
+
+#     return style
+
 def printing_styles(stereo):
-    style = {'mono': {"labels": ['Mono3D', 'Geometric Baseline', 'MonoDepth', 'Our MonoLoco', '3DOP (stereo)'],
-                      "methods": ['m3d_merged', 'geometric_merged', 'monodepth_merged', 'monoloco_merged',
-                                  '3dop_merged'],
+    style = {'mono': {"labels": [ 'Our MonoLoco', 'task_error', 'pixel_error'],
+                      "methods": ['monoloco', 'task_error', 'pixel_error'],
                       "mks": ['*', '^', 'p', 's', 'o'],
                       "mksizes": [6, 6, 6, 6, 6], "lws": [1.5, 1.5, 1.5, 2.2, 1.6],
                       "colors": ['r', 'deepskyblue', 'grey', 'b', 'darkorange'],

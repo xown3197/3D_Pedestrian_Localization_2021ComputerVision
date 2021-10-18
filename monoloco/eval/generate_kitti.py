@@ -67,7 +67,15 @@ class GenerateKitti:
             path_calib = os.path.join(self.dir_kk, basename + '.txt')
             annotations, kk, tt = factory_file(path_calib, self.dir_ann, basename)
             boxes, keypoints = preprocess_pifpaf(annotations, im_size=(1242, 374))
-            assert keypoints, "all pifpaf files should have at least one annotation"
+            
+            # import pdb;pdb.set_trace()
+            pass_cnt = 0
+            if keypoints==[]:
+                # path_txt = {'monoloco': os.path.join(dir_out['monoloco'], basename + '.txt')}
+                # save_txts(path_txt['monoloco'], all_inputs, all_outputs, all_params)
+                pass_cnt += 1
+                continue
+            # assert keypoints, f"all pifpaf files should have at least one annotation {basename}, {keypoints}"
             cnt_ann += len(boxes)
             cnt_file += 1
 
@@ -94,7 +102,7 @@ class GenerateKitti:
                     path_txt[key] = os.path.join(dir_out[key], basename + '.txt')
                     save_txts(path_txt[key], all_inputs, zzs[key], all_params, mode='baseline')
 
-        print("\nSaved in {} txt {} annotations. Not found {} images".format(cnt_file, cnt_ann, cnt_no_file))
+        print("\nSaved in {} txt {} annotations. Not found {} images fuck {}".format(cnt_file, cnt_ann, cnt_no_file, pass_cnt))
 
         if self.stereo:
             print("STEREO:")
@@ -138,10 +146,16 @@ def save_txts(path_txt, all_inputs, all_outputs, all_params, mode='monoloco'):
     with open(path_txt, "w+") as ff:
         for idx, zz_base in enumerate(zzs):
 
+            # <- xy_centeres ~ 박스 중심? all_inputs이니깐 아마 bbox인듯, bbox의 중심에서 zzs는 depth 인가. 내부 카메라의 이동 행렬 1행을 더해줌.
+            # 아마 xyz를 리얼 월드로 옮기는 방법으로 보임. 
+            # 즉, potenit 생성시, 동일한 방법을 수행하여 kitti 형태로 재생성해야함.
+            # json을 사용할지 말지는 고민해봐야겠음.
+            # import pdb;pdb.set_trace()
             xx = float(xy_centers[idx][0]) * zzs[idx] + tt[0]
             yy = float(xy_centers[idx][1]) * zzs[idx] + tt[1]
             zz = zz_base + tt[2]
             cam_0 = [xx, yy, zz]
+            # output_list~ trun occ alpha bbox-4 hwl-3 cam_0-3 rot, score
             output_list = [0.]*3 + uv_boxes[idx][:-1] + [0.]*3 + cam_0 + [0.] + uv_boxes[idx][-1:]  # kitti format
             ff.write("%s " % 'pedestrian')
             for el in output_list:
@@ -163,7 +177,10 @@ def factory_file(path_calib, dir_ann, basename, mode='left'):
 
     if mode == 'left':
         kk, tt = p_left[:]
-        path_ann = os.path.join(dir_ann, basename + '.png.pifpaf.json')
+        # 원본
+        # path_ann = os.path.join(dir_ann, basename + '.png.pifpaf.json')
+        # 수정
+        path_ann = os.path.join(dir_ann, basename + '.png.predictions.json')
 
     else:
         kk, tt = p_right[:]
@@ -216,6 +233,7 @@ def factory_basename(dir_ann, dir_gt):
     # Extract pifpaf files corresponding to validation images
     list_ann = glob.glob(os.path.join(dir_ann, '*.json'))
     set_basename = {os.path.basename(x).split('.')[0] for x in list_ann}
+    # import pdb;pdb.set_trace()
     set_val = set_basename.intersection(set_val_gt)
     assert set_val, " Missing json annotations file to create txt files for KITTI datasets"
     return set_val

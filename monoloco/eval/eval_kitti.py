@@ -11,6 +11,8 @@ import datetime
 from collections import defaultdict
 from itertools import chain
 
+import numpy as np
+
 from tabulate import tabulate
 
 from ..utils import get_iou_matches, get_task_error, get_pixel_error, check_conditions, get_category, split_training, \
@@ -24,9 +26,12 @@ class EvalKitti:
     logger = logging.getLogger(__name__)
     CLUSTERS = ('easy', 'moderate', 'hard', 'all', '6', '10', '15', '20', '25', '30', '40', '50', '>50')
     ALP_THRESHOLDS = ('<0.5m', '<1m', '<2m')
-    METHODS_MONO = ['m3d', 'monodepth', '3dop', 'monoloco']
+    # METHODS_MONO = ['m3d', 'monodepth', '3dop', 'monoloco']
+    METHODS_MONO = ['3dop', 'monoloco']
+    METHODS_MONO = ['monoloco']
     METHODS_STEREO = ['ml_stereo', 'pose', 'reid']
-    BASELINES = ['geometric', 'task_error', 'pixel_error']
+    # BASELINES = ['geometric', 'task_error', 'pixel_error']
+    BASELINES = [ 'task_error', 'pixel_error']
     HEADERS = ('method', '<0.5', '<1m', '<2m', 'easy', 'moderate', 'hard', 'all')
     CATEGORIES = ('pedestrian',)
 
@@ -332,7 +337,9 @@ class EvalKitti:
 
     def summary_table(self, all_methods):
         """Tabulate table for ALP and ALE metrics"""
-
+        aa = [[f'{key}:{len(self.errors[key][perc])}' for perc in ['<0.5m', '<1m', '<2m']] for key in all_methods]
+        # import pdb;pdb.set_trace()
+        
         alp = [[str(100 * average(self.errors[key][perc]))[:5]
                 for perc in ['<0.5m', '<1m', '<2m']]
                for key in all_methods]
@@ -346,6 +353,7 @@ class EvalKitti:
         print(tabulate(results, headers=self.HEADERS))
         print('-' * 90 + '\n')
 
+        
 
 def get_statistics(dic_stats, errors, dic_stds, key):
     """Update statistics of a cluster"""
@@ -409,4 +417,5 @@ def extract_indices(idx_to_check, *args):
 
 def average(my_list):
     """calculate mean of a list"""
-    return sum(my_list) / len(my_list)
+    if len(my_list) == 0: import pdb;pdb.set_trace()
+    return sum(my_list) / len(my_list + np.finfo(float).eps)

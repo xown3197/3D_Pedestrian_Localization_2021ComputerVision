@@ -1,5 +1,10 @@
 
+import math
+from copy import deepcopy
+
 import numpy as np
+
+# from ..utils import correct_angle, to_cartesian, to_spherical
 
 
 COCO_KEYPOINTS = [
@@ -47,7 +52,7 @@ HFLIP = {
 def transform_keypoints(keypoints, mode):
 
     assert mode == 'flip', "mode not recognized"
-    kps = np.array(keypoints)
+    kps = np.array(keypoints) 
     dic_kps = {key: kps[:, :, idx] for idx, key in enumerate(COCO_KEYPOINTS)}
     kps_hflip = np.array([dic_kps[value] for key, value in HFLIP.items()])
     kps_hflip = np.transpose(kps_hflip, (1, 2, 0))

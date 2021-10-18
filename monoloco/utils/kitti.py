@@ -117,6 +117,7 @@ def get_category(box, trunc, occ):
 
 def split_training(names_gt, path_train, path_val):
     """Split training and validation images"""
+    
     set_gt = set(names_gt)
     set_train = set()
     set_val = set()
@@ -142,12 +143,12 @@ def parse_ground_truth(path_gt, category):
     truncs_gt = []  # Float from 0 to 1
     occs_gt = []  # Either 0,1,2,3 fully visible, partly occluded, largely occluded, unknown
     boxes_3d = []
-
+    # import pdb;pdb.set_trace()
     with open(path_gt, "r") as f_gt:
         for line_gt in f_gt:
             if check_conditions(line_gt, category, method='gt'):
                 truncs_gt.append(float(line_gt.split()[1]))
-                occs_gt.append(int(line_gt.split()[2]))
+                occs_gt.append(int(float(line_gt.split()[2])))
                 boxes_gt.append([float(x) for x in line_gt.split()[4:8]])
                 loc_gt = [float(x) for x in line_gt.split()[11:14]]
                 wlh = [float(x) for x in line_gt.split()[8:11]]

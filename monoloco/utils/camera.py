@@ -11,6 +11,7 @@ def pixel_to_camera(uv_tensor, kk, z_met):
     It accepts lists or torch/numpy tensors of (m, 2) or (m, x, 2)
     where x is the number of keypoints
     """
+    # uv_tensor[0] *= -1
     if isinstance(uv_tensor, (list, np.ndarray)):
         uv_tensor = torch.tensor(uv_tensor)
     if isinstance(kk, list):

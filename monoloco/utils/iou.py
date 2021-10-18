@@ -3,7 +3,7 @@ import numpy as np
 
 
 def calculate_iou(box1, box2):
-
+    
     # Calculate the (x1, y1, x2, y2) coordinates of the intersection of box1 and box2. Calculate its Area.
     xi1 = max(box1[0], box2[0])
     yi1 = max(box1[1], box2[1])
@@ -36,7 +36,7 @@ def get_iou_matrix(boxes, boxes_gt):
 
 def get_iou_matches(boxes, boxes_gt, thresh):
     """From 2 sets of boxes and a minimum threshold, compute the matching indices for IoU matchings"""
-
+    # import pdb;pdb.set_trace()
     iou_matrix = get_iou_matrix(boxes, boxes_gt)
     if not iou_matrix.size:
         return []
