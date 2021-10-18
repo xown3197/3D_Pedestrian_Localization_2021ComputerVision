@@ -2,10 +2,7 @@
 ### Short cut
 ```sh
 # eval
-
 python3 -m monoloco.run eval --model {checkpoint path} --generate --dir_ann {annotations_dir} --dataset {potenit}
-
-
 
 # preprocessing
 python3 -m monoloco.run prep --dir_ann {annotations_dir} --dataset potenit
@@ -14,7 +11,6 @@ python3 -m monoloco.run prep --dir_ann {annotations_dir} --dataset potenit
 CUDA_VISIBLE_DEVIECES=4 python3 -m monoloco.run train --joints data/arrays/{keypoint_path}.json
 
 ## predict
-# potenit
 python3 -m monoloco.run predict --glob {data_root}/*.png --checkpoint=shufflenetv2k30 --output_types combined --model {checkpoint}.pth --n_dropout 50 --z_max 6 --show --output_directory ./result/{your_path} --instance_threshold 0.05 --force-complete-pose --seed-threshold 0.05 --path_gt data/arrays/{keypoint_path}.json
 
 ```
