@@ -1,22 +1,23 @@
 
 ### Short cut
 ```sh
-# eval
-python3 -m monoloco.run eval --model {checkpoint path} --generate --dir_ann {annotations_dir} --dataset {potenit}
 
 # preprocessing
 python3 -m monoloco.run prep --dir_ann {annotations_dir} --dataset potenit
 
 # training
-CUDA_VISIBLE_DEVIECES=4 python3 -m monoloco.run train --joints data/arrays/{keypoint_path}.json
+python3 -m monoloco.run train --joints data/arrays/{keypoint_path}.json
 
 ## predict
-python3 -m monoloco.run predict --glob {data_root}/*.png --checkpoint=shufflenetv2k30 --output_types combined --model {checkpoint}.pth --n_dropout 50 --z_max 6 --show --output_directory ./result/{your_path} --instance_threshold 0.05 --force-complete-pose --seed-threshold 0.05 --path_gt data/arrays/{keypoint_path}.json
+python3 -m monoloco.run predict --glob {data_root/*.png} --checkpoint=shufflenetv2k30 --output_types combined --model {checkpoint} --n_dropout 50 --z_max 6 --show --output_directory {your_path} --instance_threshold 0.05 --force-complete-pose --seed-threshold 0.05 --path_gt {keypoint_path}
+
+# eval
+python3 -m monoloco.run eval --model {checkpoint path} --generate --dir_ann {annotations_dir} --dataset potenit
 
 ```
 ## 베이스라인 설명 동영상  
 [![Leaderboard](https://img.shields.io/badge/Youtube-ff0000?style=flat-square&logo=youtube&link=https://www.youtube.com/channel/UC59AeIeNUcJDoCga8cO5ENw)](https://youtu.be/kWIHt36igdY)
-업로드예정
+
 
 # Monoloco
 
