@@ -16,7 +16,7 @@ python3 -m monoloco.run predict --glob {data_root/*.png} --checkpoint=shufflenet
 
 ```
 ## 베이스라인 설명 동영상  
-[![Leaderboard](https://img.shields.io/badge/Youtube-ff0000?style=flat-square&logo=youtube&link=https://www.youtube.com/channel/UC59AeIeNUcJDoCga8cO5ENw)](https://youtu.be/kWIHt36igdY)
+[![Leaderboard](https://img.shields.io/badge/Youtube-ff0000?style=flat-square&logo=youtube&link=https://www.youtube.com/channel/UC59AeIeNUcJDoCga8cO5ENw)](https://youtu.be/CpfK3pPqxNA)
 
 
 # Monoloco
