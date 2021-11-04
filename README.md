@@ -26,33 +26,6 @@ Monoloco는 단안 RGB 영상으로부터 촬영된 보행자의 3차원 위치 
 
 ![img](https://user-images.githubusercontent.com/48475175/135478287-731f5e75-4bbe-4b15-af06-6f3cea6ed8d9.png)
 
-### [Dataset](https://drive.google.com/file/d/1djoCq7N8_B6733nBrNROHqUpLcsJKPrO/view?usp=sharing)
-
-![img](https://user-images.githubusercontent.com/48475175/137700875-aa4d6692-1989-4092-9003-ffecbeda821a.png)
-
-
-
-해당 챌린지에서는 위의 그림과 같은 RGB-Thermal 스테레오로 구성된 카메라 시스템에서 촬영된 데이터 셋을 이용합니다.
-
-해당 챌린지에서 RGB-Thermal-RGB 카메라에서 촬영된 영상만 주어집니다. (요청시 오른쪽 Thermal 영상 제공)
-
-데이터는 실내 무인지게차에서 촬영이 진행되었으며, (왼쪽 RGB 카메라 기준) 작업자들에 대한 Bounding Box 정보와 작업자의 가슴을 타겟으로한 깊이 정보가 주어집니다.
-
-데이터 셋 구성:
-
-- RGB-Thermal-RGB 카메라에서 촬영된 각 637장의 영상
-- 왼쪽 RGB 기준, KITTI 3D object detection format으로 구성된 작업자의 bbox 정보와 깊이 정보가 담겨진 637개의 txt 파일.
-
-#### Dataset Download
-
-```shell
-pip install gdown
-
-gdown https://drive.google.com/u/2/uc?id=1djoCq7N8_B6733nBrNROHqUpLcsJKPrO&export=download
-
-unzip 3D_Localization.zip -d {your_dataset}
-```
-
 # Starter
 
 Docker와 Git에 익숙하지 않으신 분들을 위한 섹션입니다.
@@ -175,6 +148,62 @@ docker exec -it test bash
 
 # Setup
 
+#### Git clone
+
+```shell
+git clone https://github.com/xown3197/3D_Pedestrian_Localization_2021ComputerVision.git
+
+cd 3D_Pedestrian_Localization_2021ComputerVision
+```
+
+### [Dataset](https://drive.google.com/file/d/1djoCq7N8_B6733nBrNROHqUpLcsJKPrO/view?usp=sharing)
+
+![img](https://user-images.githubusercontent.com/48475175/137700875-aa4d6692-1989-4092-9003-ffecbeda821a.png)
+
+
+
+해당 챌린지에서는 위의 그림과 같은 RGB-Thermal 스테레오로 구성된 카메라 시스템에서 촬영된 데이터 셋을 이용합니다.
+
+해당 챌린지에서 RGB-Thermal-RGB 카메라에서 촬영된 영상만 주어집니다. (요청시 오른쪽 Thermal 영상 제공)
+
+데이터는 실내 무인지게차에서 촬영이 진행되었으며, (왼쪽 RGB 카메라 기준) 작업자들에 대한 Bounding Box 정보와 작업자의 가슴을 타겟으로한 깊이 정보가 주어집니다.
+
+데이터 셋 구성:
+
+- RGB-Thermal-RGB 카메라에서 촬영된 각 637장의 영상
+- 왼쪽 RGB 기준, KITTI 3D object detection format으로 구성된 작업자의 bbox 정보와 깊이 정보가 담겨진 637개의 txt 파일.
+
+### Data structure
+
+    Data         
+    ├── arrays                 
+    ├── models
+    ├── kitti
+    ├── nuscenes
+    ├── potenit
+    ├── logs
+
+
+Run the following to create the folders:
+
+```
+mkdir data
+cd data
+mkdir arrays models kitti nuscenes logs potenit
+```
+
+#### Dataset Download - potenit
+
+```shell
+pip install gdown
+
+cd potenit
+
+gdown https://drive.google.com/u/2/uc?id=1djoCq7N8_B6733nBrNROHqUpLcsJKPrO&export=download
+
+unzip 3D_Localization.zip
+```
+
 ### Install
 
 Python 3 is required. Python 2 is not supported. 
@@ -192,26 +221,6 @@ pip3 install -e '.[test, prep]'
 
 Python 3.6 or 3.7 is required for nuScenes development kit. 
 All details for Pifpaf pose detector at [openpifpaf](https://github.com/vita-epfl/openpifpaf).
-
-
-
-### Data structure
-
-    Data         
-    ├── arrays                 
-    ├── models
-    ├── kitti
-    ├── nuscenes
-    ├── logs
-
-
-Run the following to create the folders:
-
-```
-mkdir data
-cd data
-mkdir arrays models kitti nuscenes logs
-```
 
 ### Pre-trained Models
 
