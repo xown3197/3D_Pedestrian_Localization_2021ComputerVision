@@ -2,17 +2,16 @@
 
 ```sh
 # preprocessing
-python3 -m monoloco.run prep --dir_ann {annotations_dir} --dataset potenit
+python3 -m monoloco.run prep --dir_ann annotations/potenit --dataset potenit
 
 # training
-python3 -m monoloco.run train --joints data/arrays/{keypoint_path}.json
+python3 -m monoloco.run train --joints data/arrays/joints-potenit-{your_filename}.json
 
 # eval
-python3 -m monoloco.run eval --model {checkpoint path} --generate --dir_ann {annotations_dir} --dataset potenit
+python3 -m monoloco.run eval --model {checkpoint path} --generate --dir_ann annotations/potenit --dataset potenit
 
-## predict
-python3 -m monoloco.run predict --glob {data_root/*.png} --checkpoint=shufflenetv2k30 --output_types combined --model {checkpoint} --n_dropout 50 --z_max 6 --show --output_directory {your_path} --instance_threshold 0.05 --force-complete-pose --seed-threshold 0.05 --path_gt {keypoint_path}
-
+## submit file
+cd data/potenit & zip submit.zip monoloco/*
 ```
 
 ## 베이스라인 설명 동영상  

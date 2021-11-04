@@ -92,7 +92,7 @@ class PreprocessPotenit:
 
             except FileNotFoundError:
                 boxes = []
-                print('fuck!!')
+                
 
             # Match each set of keypoint with a ground truth
             matches = get_iou_matches(boxes, boxes_gt, self.iou_min)
