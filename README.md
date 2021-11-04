@@ -45,13 +45,13 @@ sudo apt-get install \
     lsb-release
 ```
 
-      2. Docker’s official GPG key 추가
+2. Docker’s official GPG key 추가
 
-   ```shell
+```shell
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-   ```
+```
 
-      3. Docker 패키지 업데이트
+3. Docker 패키지 업데이트
 
 ```shell
 echo \
