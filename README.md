@@ -312,21 +312,6 @@ python3 -m monoloco.run predict --webcam --scale 0.2 --output_types combined --z
 
 ### Datasets
 
-#### 1) KITTI dataset
-
-Download KITTI ground truth files and camera calibration matrices for training
-from [here](http://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=3d) and
-save them respectively into `data/kitti/gt` and `data/kitti/calib`. 
-To extract pifpaf joints, you also need to download training images soft link the folder in `
-data/kitti/images`
-
-#### 2) nuScenes dataset
-
-Download nuScenes dataset from [nuScenes](https://www.nuscenes.org/download) (either Mini or TrainVal), 
-save it anywhere and soft link it in `data/nuscenes`
-
-nuScenes preprocessing requires `pip3 install nuscenes-devkit`
-
 
 ### Annotations to preprocess
 
