@@ -11,7 +11,7 @@ python3 -m monoloco.run train --joints data/arrays/joints-potenit-{your_filename
 python3 -m monoloco.run eval --model {checkpoint path} --generate --dir_ann annotations/potenit --dataset potenit
 
 ## submit file
-cd data/potenit & zip submit.zip monoloco/*
+cd data/potenit & zip -r submit.zip monoloco
 ```
 
 ## 베이스라인 설명 동영상  
