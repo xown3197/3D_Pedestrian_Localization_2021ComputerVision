@@ -24,7 +24,34 @@ python3 -m monoloco.run predict --glob {data_root/*.png} --checkpoint=shufflenet
 
 Monoloco는 단안 RGB 영상으로부터 촬영된 보행자의 3차원 위치 인식에서의 근본적인 원인을 바라보고 해결하고자 합니다. 단순하게 보행자의 위치를 점으로 보고 추정하는 것이 아니라 Laplace distribution를 기반으로 하는 손실 함수를 이용하여 신뢰 구간을 예측함으로써 작업의 모호성을 해결합니다. 저자가 제안하는 아키텍처는 2D Human pose를 입력값으로 사용하여 보행자의 3차원 위치와 이에 해당하는 신뢰 구간을 예측하는 light-weight feed-forward neural network 입니다. 해당 네트워크는 실시간 응용 프로그램에 적합하며, 2019년 당시 KITTI와 nuScenes 데이터 셋에서 SOTA를 달성한 방법론입니다.
 
+![img](https://user-images.githubusercontent.com/48475175/135478287-731f5e75-4bbe-4b15-af06-6f3cea6ed8d9.png)
 
+### [Dataset](https://drive.google.com/file/d/1djoCq7N8_B6733nBrNROHqUpLcsJKPrO/view?usp=sharing)
+
+![img](https://user-images.githubusercontent.com/48475175/137700875-aa4d6692-1989-4092-9003-ffecbeda821a.png)
+
+
+
+해당 챌린지에서는 위의 그림과 같은 RGB-Thermal 스테레오로 구성된 카메라 시스템에서 촬영된 데이터 셋을 이용합니다.
+
+해당 챌린지에서 RGB-Thermal-RGB 카메라에서 촬영된 영상만 주어집니다. (요청시 오른쪽 Thermal 영상 제공)
+
+데이터는 실내 무인지게차에서 촬영이 진행되었으며, (왼쪽 RGB 카메라 기준) 작업자들에 대한 Bounding Box 정보와 작업자의 가슴을 타겟으로한 깊이 정보가 주어집니다.
+
+데이터 셋 구성:
+
+- RGB-Thermal-RGB 카메라에서 촬영된 각 637장의 영상
+- 왼쪽 RGB 기준, KITTI 3D object detection format으로 구성된 작업자의 bbox 정보와 깊이 정보가 담겨진 637개의 txt 파일.
+
+#### Dataset Download
+
+```shell
+pip install gdown
+
+gdown https://drive.google.com/u/2/uc?id=1djoCq7N8_B6733nBrNROHqUpLcsJKPrO&export=download
+
+unzip 3D_Localization.zip -d {your_dataset}
+```
 
 # Starter
 
