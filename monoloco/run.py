@@ -68,7 +68,7 @@ def cli():
     training_parser.add_argument('--joints', help='Json file with input joints',
                                  default='data/arrays/joints-nuscenes_teaser-190513-1846.json')
     training_parser.add_argument('--save', help='whether to not save model and log file', action='store_false')
-    training_parser.add_argument('-e', '--epochs', type=int, help='number of epochs to train for', default=150)
+    training_parser.add_argument('--epochs', type=int, help='number of epochs to train for', default=150)
     training_parser.add_argument('--bs', type=int, default=256, help='input batch size')
     training_parser.add_argument('--baseline', help='whether to train using the baseline', action='store_true')
     training_parser.add_argument('--dropout', type=float, help='dropout. Default no dropout', default=0.2)
@@ -80,6 +80,9 @@ def cli():
     training_parser.add_argument('--hyp', help='run hyperparameters tuning', action='store_true')
     training_parser.add_argument('--multiplier', type=int, help='Size of the grid of hyp search', default=1)
     training_parser.add_argument('--r_seed', type=int, help='specify the seed for training and hyp tuning', default=1)
+    
+    training_parser.add_argument('--sub_model', help='include stereo baseline results', action='store_true')
+
 
     # Evaluation
     eval_parser.add_argument('--dataset', help='datasets to evaluate, kitti or nuscenes', default='kitti')
@@ -96,9 +99,13 @@ def cli():
     eval_parser.add_argument('--save', help='whether to save statistic graphs', action='store_true')
     eval_parser.add_argument('--verbose', help='verbosity of statistics', action='store_true')
     eval_parser.add_argument('--stereo', help='include stereo baseline results', action='store_true')
+    
+    eval_parser.add_argument('--sub_model', help='include stereo baseline results', action='store_true')
 
-    use_cuda = torch.cuda.is_available()
+    # use_cuda = torch.cuda.is_available()
+    use_cuda = False
     device = torch.device("cuda" if use_cuda else "cpu")
+    # device = torch.device('cpu')
 
     predict_parser.add_argument('--device', help='directory of annotations of 2d joints')
 
@@ -145,7 +152,7 @@ def main():
             training = Trainer(joints=args.joints, epochs=args.epochs, bs=args.bs,
                                baseline=args.baseline, dropout=args.dropout, lr=args.lr, sched_step=args.sched_step,
                                n_stage=args.n_stage, sched_gamma=args.sched_gamma, hidden_size=args.hidden_size,
-                               r_seed=args.r_seed, save=args.save)
+                               r_seed=args.r_seed, save=args.save, sub=args.sub_model)
 
             _ = training.train()
             _ = training.evaluate()
@@ -164,7 +171,9 @@ def main():
 
         if args.generate and args.dataset == 'potenit':
             from .eval import GeneratePotenit
-            potenit_txt = GeneratePotenit(args.model, args.dir_ann, p_dropout=args.dropout, n_dropout=args.n_dropout, stereo=args.stereo)
+            potenit_txt = GeneratePotenit(args.model, args.dir_ann, 
+                                          p_dropout=args.dropout, n_dropout=args.n_dropout, 
+                                          stereo=args.stereo, sub_model=args.sub_model)
             potenit_txt.run()
 
         if args.dataset == 'kitti':
@@ -180,7 +189,7 @@ def main():
 
         if 'potenit' in args.dataset:
             from .eval import EvalPotenit
-            potenit_eval = EvalPotenit(verbose=args.verbose, stereo=args.stereo)
+            potenit_eval = EvalPotenit(verbose=args.verbose, stereo=args.stereo, sub_model=args.sub_model)
             potenit_eval.run()
             potenit_eval.printer(show=args.show, save=args.save)
     else:

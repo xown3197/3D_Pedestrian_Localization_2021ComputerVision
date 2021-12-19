@@ -12,6 +12,7 @@ from ..utils import get_iou_matches, reorder_matches, get_keypoints, pixel_to_ca
 from .process import preprocess_monoloco, unnormalize_bi, laplace_sampling
 from .architectures import LinearModel
 
+knee_point = [9, 10, 12, 13]
 
 class MonoLoco:
 
@@ -21,7 +22,7 @@ class MonoLoco:
     LINEAR_SIZE = 256
     N_SAMPLES = 100
 
-    def __init__(self, model, device=None, n_dropout=0, p_dropout=0.2):
+    def __init__(self, model, device=None, n_dropout=0, p_dropout=0.2, sub_model=None):
 
         if not device:
             self.device = torch.device('cpu')
@@ -33,6 +34,20 @@ class MonoLoco:
         # if the path is provided load the model parameters
         if isinstance(model, str):
             model_path = model
+            ## tjkim
+            # self.sub_model = LinearModel(p_dropout=p_dropout, input_size=self.INPUT_SIZE, linear_size=self.LINEAR_SIZE)
+            if sub_model:
+                self.sub_model = LinearModel(input_size=self.INPUT_SIZE, output_size=8, linear_size=2048,
+                                    p_dropout=0.5, num_stage=1)
+                sub_model_path = model_path.split('.')
+                sub_model_path = '.'.join([sub_model_path[0] + '_sub', sub_model_path[1]])
+                self.sub_model.load_state_dict(torch.load(sub_model_path, map_location=lambda storage, loc: storage))
+                
+                self.sub_model.eval()
+                self.sub_model.to(self.device)
+            else:
+                self.sub_model = sub_model
+            ##
             self.model = LinearModel(p_dropout=p_dropout, input_size=self.INPUT_SIZE, linear_size=self.LINEAR_SIZE)
             self.model.load_state_dict(torch.load(model_path, map_location=lambda storage, loc: storage))
 
@@ -54,7 +69,13 @@ class MonoLoco:
                 total_outputs = torch.empty((0, inputs.size()[0])).to(self.device)
 
                 for _ in range(self.n_dropout):
-                    outputs = self.model(inputs)
+                    if self.sub_model:
+                        inputs_ = self.sub_model(inputs)
+                        for i, kn in enumerate(knee_point):
+                                inputs[:, kn*2:kn*2+1] = inputs_[:, i:i+1].detach()
+                        outputs = self.model(inputs_)
+                    else:
+                        outputs = self.model(inputs)
                     outputs = unnormalize_bi(outputs)
                     samples = laplace_sampling(outputs, self.N_SAMPLES)
                     total_outputs = torch.cat((total_outputs, samples), 0)

@@ -26,11 +26,12 @@ from ..network.process import unnormalize_bi
 from ..network.architectures import LinearModel
 from ..utils import set_logger
 
+knee_point = [9, 10, 12, 13]
 
 class Trainer:
     def __init__(self, joints, epochs=100, bs=256, dropout=0.2, lr=0.002,
                  sched_step=20, sched_gamma=1, hidden_size=256, n_stage=3, r_seed=1, n_samples=100,
-                 baseline=False, save=False, print_loss=False):
+                 baseline=False, save=False, print_loss=False, sub=False):
         """
         Initialize directories, load the data and parameters for the training
         """
@@ -76,9 +77,14 @@ class Trainer:
             self.criterion = LaplacianLoss().cuda()
             self.output_size = 2
         self.criterion_eval = nn.L1Loss().cuda()
+        
+        ## tjkim Submodel
+        self.sub_criterion = nn.MSELoss().cuda()
+        self.sub_criterion2 = nn.L1Loss().cuda()
 
         if self.save:
             self.path_model = os.path.join(dir_out, name_out + '.pkl')
+            self.path_model_sub = os.path.join(dir_out, name_out + '_sub.pkl')
             self.logger = set_logger(os.path.join(dir_logs, name_out))
             self.logger.info("Training arguments: \nepochs: {} \nbatch_size: {} \ndropout: {}"
                              "\nbaseline: {} \nlearning rate: {} \nscheduler step: {} \nscheduler gamma: {}  "
@@ -114,10 +120,26 @@ class Trainer:
                                  p_dropout=dropout, num_stage=self.n_stage)
         self.model.to(self.device)
         print(">>> total params: {:.2f}M".format(sum(p.numel() for p in self.model.parameters()) / 1000000.0))
+        
+        ## tjkim
+        self.sub = sub
+        if self.sub:
+            print(">>> creating Missing Part Model")
+            # self.sub_model = LinearModel(input_size=input_size, output_size=input_size, linear_size=256,
+            #                         p_dropout=0.5, num_stage=1)
+            self.sub_model = LinearModel(input_size=input_size, output_size=8, linear_size=2048,
+                                    p_dropout=0.5, num_stage=1)
+            self.sub_model.to(self.device)
+            print(">>> total params: {:.2f}M".format(sum(p.numel() for p in self.sub_model.parameters()) / 1000000.0))
 
         # Optimizer and scheduler
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=lr)
         self.scheduler = lr_scheduler.StepLR(self.optimizer, step_size=self.sched_step, gamma=self.sched_gamma)
+        
+        if self.sub:
+            # MPM ~ Optimizer and scheduler
+            self.optimizer2 = torch.optim.Adam(params=self.sub_model.parameters(), lr=lr)
+            self.scheduler2 = lr_scheduler.StepLR(self.optimizer, step_size=self.sched_step, gamma=self.sched_gamma)
 
     def train(self):
 
@@ -126,7 +148,14 @@ class Trainer:
         best_model_wts = copy.deepcopy(self.model.state_dict())
         best_acc = 1e6
         best_epoch = 0
+        loss = 0
+        loss_eval = 0
         epoch_losses_tr, epoch_losses_val, epoch_norms, epoch_sis = [], [], [], []
+        
+        epoch_losses_tr2, epoch_losses_val2, epoch_norms2, epoch_sis2 = [], [], [], []
+        
+        # sub_model_path = 'data/models/monoloco-211218-1942_sub.pkl'
+        # self.sub_model.load_state_dict(torch.load(sub_model_path, map_location=lambda storage, loc: storage))
 
         for epoch in range(self.num_epochs):
 
@@ -135,22 +164,138 @@ class Trainer:
                 if phase == 'train':
                     self.scheduler.step()
                     self.model.train()  # Set model to training mode
+                    ## tjkim
+                    if self.sub:
+                        self.sub_model.train()
+                    ##
                 else:
                     self.model.eval()  # Set model to evaluate mode
+                    ## tjkim
+                    if self.sub:
+                        self.sub_model.eval()
+                    ##
 
                 running_loss_tr = running_loss_eval = norm_tr = bi_tr = 0.0
+                running_loss_tr2 = running_loss_eval2 = norm_tr2 = bi_tr2 = 0.0
+                                # Iterate over data.
+                if self.sub and epoch < 150:                                
+                    ## submodel !!
+                    for inputs, labels, names, kps in self.dataloaders[phase]:
+                        # if '000407.txt' in names:
+                        #     import pdb;pdb.set_trace()
+                        inputs = inputs.to(self.device)
+                        labels = labels.to(self.device)
+                        
+                        # import pdb;pdb.set_trace()
+                        ## tjkim
+                        inputs_ = copy.deepcopy(inputs) 
+                        if torch.rand(1) > -10:
+                            
+                            ## knee
+                            knee_point = [9, 10, 12, 13]
+                            '''
+                            0 ~ *2 + 1 ~ 0 1
+                            1 ~ *2 + 1 ~ 2 3
+                            2 ~ *2 + 1 ~ 4 5
+                            ...
+                            16 ~ *2 + 1 ~ 32 33
+                            '''
+                            for kn in knee_point:
+                                inputs_[:, kn*2:kn*2+1] = 1.0000e-02
+                            
+                            ## random ~
+                            # mask = torch.randn(inputs.size()) > torch.rand(1) 
+                            # inputs_[mask] = 1.0000e-02
+                            
+                        
+                            
+                            
+                            # inputs += noise 
+                        # zero the parameter gradients
+                        self.optimizer2.zero_grad()
 
+                        # forward
+                        # track history if only in train
+                        with torch.set_grad_enabled(phase == 'train'):
+                            outputs = self.sub_model(inputs_)
+
+                            # outputs_eval = outputs[:, 0:1] if self.output_size == 2 else outputs
+                            outputs_eval = outputs
+                            try:
+                                for i, kn in enumerate(knee_point):
+                                    if i==0:
+                                        loss = self.sub_criterion(outputs[:, i:i+1], inputs[:, kn*2:kn*2+1])
+                                    else:
+                                        loss += self.sub_criterion(outputs[:, i:i+1], inputs[:, kn*2:kn*2+1])
+                                # loss = self.sub_criterion(outputs, inputs)  # L2 loss to evaluation
+                                loss /= len(knee_point) / 2
+                            except:
+                                import pdb;pdb.set_trace()
+                                
+                            for i, kn in enumerate(knee_point):
+                                if i==0:
+                                        loss_eval = self.sub_criterion2(outputs[:, i:i+1], inputs[:, kn*2:kn*2+1])
+                                else:
+                                    loss_eval += self.sub_criterion2(outputs[:, i:i+1], inputs[:, kn*2:kn*2+1])
+                            loss_eval /= len(knee_point) / 2
+                            # loss_eval = self.sub_criterion2(outputs, inputs)  # L2 loss to evaluation
+
+                            # backward + optimize only if in training phase
+                            if phase == 'train':
+                                loss.backward()
+                                self.optimizer2.step()
+
+                        # statistics
+                        running_loss_tr2 += loss.item() * inputs.size(0)
+                        running_loss_eval2 += loss_eval.item() * inputs.size(0)
+
+                    epoch_loss = running_loss_tr2 / self.dataset_sizes[phase]
+                    epoch_acc = running_loss_eval2 / self.dataset_sizes[phase]  # Average distance in meters
+                    epoch_norm = float(norm_tr2 / self.dataset_sizes[phase])
+                    epoch_si = float(bi_tr2 / self.dataset_sizes[phase])
+                    if phase == 'train':
+                        epoch_losses_tr2.append(epoch_loss)
+                        epoch_norms2.append(epoch_norm)
+                        epoch_sis2.append(epoch_si)
+                    else:
+                        epoch_losses_val2.append(epoch_acc)
+
+                    if epoch % 5 == 1:
+                        sys.stdout.write('\r' + 'subnet !! Epoch: {:.0f}   Training Loss: {:.3f}   Val Loss {:.3f}'
+                                        .format(epoch, epoch_losses_tr2[-1], epoch_losses_val2[-1]) + '\t')
+
+                    # deep copy the model
+                    if phase == 'val' and epoch_acc < best_acc:
+                        best_acc = epoch_acc
+                        best_epoch = epoch
+                        best_model_wts2 = copy.deepcopy(self.sub_model.state_dict())
+                    if epoch_losses_tr2[-1] > 0.08:
+                        continue
+                #### main model !!! 
+                if self.sub:          
+                    self.sub_model.eval()     
                 # Iterate over data.
                 for inputs, labels, _, _ in self.dataloaders[phase]:
                     inputs = inputs.to(self.device)
                     labels = labels.to(self.device)
-
+                    
+                    ## tjkim
+                    ## sub_model
+                    if self.sub:
+                        inputs_ = self.sub_model(inputs)
+                        for i, kn in enumerate(knee_point):
+                                inputs[:, kn*2:kn*2+1] = inputs_[:, i:i+1].detach()
+                    
                     # zero the parameter gradients
                     self.optimizer.zero_grad()
 
                     # forward
                     # track history if only in train
                     with torch.set_grad_enabled(phase == 'train'):
+
+                        # if self.sub:
+                            # outputs = self.model(inputs_)    
+                        # else:
                         outputs = self.model(inputs)
 
                         outputs_eval = outputs[:, 0:1] if self.output_size == 2 else outputs
@@ -177,11 +322,14 @@ class Trainer:
                     epoch_sis.append(epoch_si)
                 else:
                     epoch_losses_val.append(epoch_acc)
-
-                if epoch % 5 == 1:
-                    sys.stdout.write('\r' + 'Epoch: {:.0f}   Training Loss: {:.3f}   Val Loss {:.3f}'
-                                     .format(epoch, epoch_losses_tr[-1], epoch_losses_val[-1]) + '\t')
-
+                try:
+                    if epoch % 5 == 1:
+                        sys.stdout.write('\n' + 'Epoch: {:.0f}   Training Loss: {:.3f}   Val Loss {:.3f}'
+                                        .format(epoch, epoch_losses_tr[-1], epoch_losses_val[-1]) + '\t')
+                except:
+                    if epoch % 5 == 1:
+                        sys.stdout.write('\n' + 'Epoch: {:.0f}   Training Loss: {:.3f}   Val Loss {:.3f}'
+                                        .format(epoch, epoch_losses_tr[-1], epoch_acc) + '\t')
                 # deep copy the model
                 if phase == 'val' and epoch_acc < best_acc:
                     best_acc = epoch_acc
@@ -204,23 +352,38 @@ class Trainer:
 
         # load best model weights
         self.model.load_state_dict(best_model_wts)
+        if self.sub:
+            self.sub_model.load_state_dict(best_model_wts2)
 
         return best_epoch
 
-    def evaluate(self, load=False, model=None, debug=False):
+    def evaluate(self, load=False, model=None, debug=False, sub_model=None):
 
         # To load a model instead of using the trained one
         if load:
             self.model.load_state_dict(torch.load(model, map_location=lambda storage, loc: storage))
+            ## tjkim
+            self.sub_model.load_state_dict(torch.load(sub_model, map_location=lambda storage, loc: storage))
 
         # Average distance on training and test set after unnormalizing
         self.model.eval()
+        self.sub_model.eval()
         dic_err = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))  # initialized to zero
         phase = 'val'
         batch_size = 5000
         dataset = KeypointsDataset(self.joints, phase=phase)
         size_eval = len(dataset)
         start = 0
+        
+        # Save the model and the results
+        if self.save and not load:
+            torch.save(self.model.state_dict(), self.path_model)
+            torch.save(self.sub_model.state_dict(), self.path_model_sub)
+            print('-'*120)
+            self.logger.info("\nmodel saved: {} \n".format(self.path_model + self.path_model_sub))
+        else:
+            self.logger.info("\nmodel not saved\n")
+            
         with torch.no_grad():
             for end in range(batch_size, size_eval+batch_size, batch_size):
                 end = end if end < size_eval else size_eval
@@ -235,7 +398,18 @@ class Trainer:
                     sys.exit()
 
                 # Forward pass
-                outputs = self.model(inputs)
+                
+                ## tjkim
+                ## sub_model
+                if self.sub:
+                    inputs_ = self.sub_model(inputs)
+                    for i, kn in enumerate(knee_point):
+                        inputs[:, kn*2:kn*2+1] = inputs_[:, i:i+1].detach()
+                ## 
+                
+                    outputs = self.model(inputs)
+                else:
+                    outputs = self.model(inputs)
                 if not self.baseline:
                     outputs = unnormalize_bi(outputs)
 
@@ -254,7 +428,19 @@ class Trainer:
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
                 # Forward pass on each cluster
-                outputs = self.model(inputs)
+                ## tjkim
+                ## sub_model
+                if self.sub:
+                    # inputs_ = self.sub_model(inputs)
+                    outputs_ = self.sub_model(inputs)
+                    for i, kn in enumerate(knee_point):
+                        inputs[:, kn*2:kn*2+1] = outputs_[i:i+1]
+                ## 
+                
+                    outputs = self.model(inputs)
+                else:
+                    outputs = self.model(inputs)                    
+                # outputs = self.model(inputs)
                 if not self.baseline:
                     outputs = unnormalize_bi(outputs)
 
@@ -265,13 +451,7 @@ class Trainer:
                                  .format(phase, clst, dic_err[phase][clst]['mean'], size_eval,
                                          dic_err[phase][clst]['bi'], dic_err[phase][clst]['conf_bi'] * 100))
 
-        # Save the model and the results
-        if self.save and not load:
-            torch.save(self.model.state_dict(), self.path_model)
-            print('-'*120)
-            self.logger.info("\nmodel saved: {} \n".format(self.path_model))
-        else:
-            self.logger.info("\nmodel not saved\n")
+
 
         return dic_err, self.model
 

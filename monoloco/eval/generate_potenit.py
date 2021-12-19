@@ -22,12 +22,12 @@ from .reid_baseline import ReID, get_reid_features
 
 class GeneratePotenit:
 
-    def __init__(self, model, dir_ann, p_dropout=0.2, n_dropout=0, stereo=True):
+    def __init__(self, model, dir_ann, p_dropout=0.2, n_dropout=0, stereo=True, sub_model=False):
 
         # Load monoloco
         use_cuda = torch.cuda.is_available()
         device = torch.device("cuda" if use_cuda else "cpu")
-        self.monoloco = MonoLoco(model=model, device=device, n_dropout=n_dropout, p_dropout=p_dropout)
+        self.monoloco = MonoLoco(model=model, device=device, n_dropout=n_dropout, p_dropout=p_dropout, sub_model=sub_model)
         self.dir_ann = dir_ann
 
         # Extract list of pifpaf files in validation images

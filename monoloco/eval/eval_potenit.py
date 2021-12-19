@@ -38,7 +38,7 @@ class EvalPotenit:
     CATEGORIES = ('pedestrian',)
 
     def __init__(self, thresh_iou_monoloco=0.3, thresh_iou_base=0.3, thresh_conf_monoloco=0.3, thresh_conf_base=0.3,
-                 verbose=False, stereo=False):
+                 verbose=False, stereo=False, sub_model=False):
 
         self.main_dir = os.path.join('data', 'potenit')
         self.dir_gt = os.path.join(self.main_dir, 'gt')
@@ -121,11 +121,14 @@ class EvalPotenit:
                     print(f'#3 campare error')
                     self._compare_error(out_gt, methods_out)
             print(f'#4 stactics of errors')
+            # import pdb;pdb.set_trace()
             # Update statistics of errors and uncertainty
             for key in self.errors:
+                
                 add_true_negatives(self.errors[key], self.cnt_gt)
                 for clst in self.CLUSTERS[:-2]:  # M3d and pifpaf does not have annotations above 40 meters
                     try:
+                        
                         get_statistics(self.dic_stats['test'][key][clst], self.errors[key][clst], self.dic_stds[clst], key)
                     except:
                         import pdb;pdb.set_trace()
@@ -178,6 +181,7 @@ class EvalPotenit:
                             self.dic_cnt['geometric'] += 1
             return output
         except FileNotFoundError:
+            print("Fuck File not found")
             return output
 
     def _estimate_error(self, out_gt, out, method):
@@ -205,6 +209,7 @@ class EvalPotenit:
                 self.update_errors(dd_pixel_error, dds_gt[idx_gt], cat, self.errors['pixel_error'])
 
     def _compare_error(self, out_gt, methods_out):
+        
         """Compare the error for a pool of instances commonly matched by all methods"""
         boxes_gt, _, dds_gt, zzs_gt, truncs_gt, occs_gt = out_gt
 
